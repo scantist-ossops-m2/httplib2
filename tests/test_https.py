@@ -168,3 +168,25 @@ def test_sni_set_servername_callback():
         uri_parsed = urllib.parse.urlparse(uri)
         http.request(uri)
         assert sni_log == [uri_parsed.hostname]
+
+
+def test_http_redirect_https():
+    http = httplib2.Http(ca_certs=tests.CA_CERTS)
+    with tests.server_const_http(tls=True) as uri_https:
+        with tests.server_const_http(status=301, headers={"location": uri_https}) as uri_http:
+            response, _ = http.request(uri_http, "GET")
+            assert response.status == 200
+            assert response["content-location"] == uri_https
+            assert response.previous.status == 301
+            assert response.previous["content-location"] == uri_http
+
+
+def test_https_redirect_http():
+    http = httplib2.Http(ca_certs=tests.CA_CERTS)
+    with tests.server_const_http() as uri_http:
+        with tests.server_const_http(tls=True, status=301, headers={"location": uri_http}) as uri_https:
+            response, _ = http.request(uri_https, "GET")
+            assert response.status == 200
+            assert response["content-location"] == uri_http
+            assert response.previous.status == 301
+            assert response.previous["content-location"] == uri_https

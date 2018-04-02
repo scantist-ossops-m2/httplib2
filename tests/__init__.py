@@ -23,7 +23,10 @@ import zlib
 import httplib2
 import pytest
 import six
-from six.moves import http_client, queue
+from six.moves import http_client, queue, urllib
+
+
+_missing = object()
 
 x509 = None
 if sys.version_info >= (3, 6):
@@ -40,7 +43,8 @@ CLIENT_ENCRYPTED_PEM = os.path.join(tls_dir, "client_encrypted.pem")
 SERVER_PEM = os.path.join(tls_dir, "server.pem")
 SERVER_CHAIN = os.path.join(tls_dir, "server_chain.pem")
 skip_benchmark = pytest.mark.skipif(
-    os.getenv("httplib2_test_bench", "") != "1", reason="benchmark disabled by default, set env httplib2_test_bench=1",
+    os.getenv("httplib2_test_bench", "") != "1",
+    reason="benchmark disabled by default, set env httplib2_test_bench=1",
 )
 
 
@@ -62,8 +66,7 @@ def assert_raises(exc_type):
 
 
 class BufferedReader(object):
-    """io.BufferedReader with \r\n support
-    """
+    """io.BufferedReader with \r\n support"""
 
     def __init__(self, sock):
         self._buf = b""
@@ -205,11 +208,17 @@ class MockResponse(six.BytesIO):
 
 
 class MockHTTPConnection(object):
-    """This class is just a mock of httplib.HTTPConnection used for testing
-    """
+    """This class is just a mock of httplib.HTTPConnection used for testing"""
 
     def __init__(
-        self, host, port=None, key_file=None, cert_file=None, strict=None, timeout=None, proxy_info=None,
+        self,
+        host,
+        port=None,
+        key_file=None,
+        cert_file=None,
+        strict=None,
+        timeout=None,
+        proxy_info=None,
     ):
         self.host = host
         self.port = port
@@ -235,13 +244,19 @@ class MockHTTPConnection(object):
 
 
 class MockHTTPBadStatusConnection(object):
-    """Mock of httplib.HTTPConnection that raises BadStatusLine.
-    """
+    """Mock of httplib.HTTPConnection that raises BadStatusLine."""
 
     num_calls = 0
 
     def __init__(
-        self, host, port=None, key_file=None, cert_file=None, strict=None, timeout=None, proxy_info=None,
+        self,
+        host,
+        port=None,
+        key_file=None,
+        cert_file=None,
+        strict=None,
+        timeout=None,
+        proxy_info=None,
     ):
         self.host = host
         self.port = port
@@ -291,6 +306,7 @@ def server_socket(fun, request_count=1, timeout=5, scheme="", tls=None):
     tls_skip_errors = [
         "TLSV1_ALERT_UNKNOWN_CA",
     ]
+    assert scheme in ("", "http", "https"), 'tests.server_socket: invalid scheme="{}"'.format(scheme)
 
     def tick(request):
         gcounter[0] += 1
@@ -341,13 +357,17 @@ def server_socket(fun, request_count=1, timeout=5, scheme="", tls=None):
     if tls is True:
         tls = SERVER_CHAIN
     if tls:
-        context = ssl_context()
+        # TODO: Drop py3.3 support and replace this with ssl.create_default_context
+        ssl_context = ssl.SSLContext(getattr(ssl, "PROTOCOL_TLS", None) or getattr(ssl, "PROTOCOL_SSLv23"))
+        # TODO: leave this when py3.3 support is dropped
+        # ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=CA_CERTS)
+
         if callable(tls):
-            context.load_cert_chain(SERVER_CHAIN)
-            server = tls(context, server, tls_skip_errors)
+            ssl_context.load_cert_chain(SERVER_CHAIN)
+            server = tls(ssl_context, server, tls_skip_errors)
         else:
-            context.load_cert_chain(tls)
-            server = context.wrap_socket(server, server_side=True)
+            ssl_context.load_cert_chain(tls)
+            server = ssl_context.wrap_socket(server, server_side=True)
     if scheme == "":
         scheme = "https" if tls else "http"
 
@@ -630,7 +650,16 @@ def http_reflect_with_auth(allow_scheme, allow_credentials, out_renew_nonce=None
                 ).hexdigest()
                 rspauth_ha2 = hasher(":{}".format(request.uri).encode()).hexdigest()
                 rspauth = hasher(
-                    ":".join((ha1, client_nonce, client_nc, client_cnonce, client_qop, rspauth_ha2,)).encode()
+                    ":".join(
+                        (
+                            ha1,
+                            client_nonce,
+                            client_nc,
+                            client_cnonce,
+                            client_qop,
+                            rspauth_ha2,
+                        )
+                    ).encode()
                 ).hexdigest()
                 if auth_info.get("response", "") == allow_response:
                     # TODO: fix or remove doubtful comment
@@ -677,7 +706,10 @@ def http_reflect_with_auth(allow_scheme, allow_credentials, out_renew_nonce=None
 
             return deny(body=b"supplied credentials are not allowed")
         else:
-            return http_response_bytes(status=400, body="unknown authorization scheme={0}".format(scheme).encode(),)
+            return http_response_bytes(
+                status=400,
+                body="unknown authorization scheme={0}".format(scheme).encode(),
+            )
 
     return http_reflect_with_auth_handler
 
@@ -724,8 +756,7 @@ def deflate_decompress(bs):
 
 
 def ssl_context(protocol=None):
-    """Workaround for old SSLContext() required protocol argument.
-    """
+    """Workaround for old SSLContext() required protocol argument."""
     if sys.version_info < (3, 5, 3):
         return ssl.SSLContext(ssl.PROTOCOL_SSLv23)
     return ssl.SSLContext()
@@ -754,3 +785,22 @@ def x509_serial(path):
         pem = f.read()
     cert = x509.load_pem_x509_certificate(pem)
     return cert.serial_number
+
+
+def rebuild_uri(old, scheme=_missing, netloc=_missing, host=_missing, port=_missing, path=_missing):
+    if "//" not in old:
+        old = "//" + old
+    u = urllib.parse.urlsplit(old)
+    if scheme is _missing:
+        scheme = u.scheme
+    if netloc is _missing:
+        netloc = u.netloc
+    if host is _missing:
+        host = u.hostname if not u.netloc.startswith("[") else "[{}]".format(u.hostname)
+    if port is _missing:
+        port = u.port
+    netloc = host if port is None else "{}:{}".format(host, port)
+    if path is _missing:
+        path = u.path
+    new = (scheme, netloc, path) + u[3:]
+    return urllib.parse.urlunsplit(new)
