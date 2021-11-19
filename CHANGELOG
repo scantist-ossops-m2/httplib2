@@ -1,3 +1,7 @@
+0.20.3
+
+  No changes in library. Tests compatible with Python3.10 and recent pytest.
+
 0.20.2
 
   auth: support pyparsing v3 (AttributeError downcaseTokens)

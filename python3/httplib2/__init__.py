@@ -15,7 +15,7 @@ __contributors__ = [
     "Alex Yu",
 ]
 __license__ = "MIT"
-__version__ = "0.20.2"
+__version__ = "0.20.3"
 
 import base64
 import calendar
