@@ -43,8 +43,15 @@ def test_from_url_no_password():
     pi = httplib2.proxy_info_from_url("http://leila@fro.xy:1032")
     assert pi.proxy_host == "fro.xy"
     assert pi.proxy_port == 1032
+    assert pi.proxy_user == "leila"
+    assert pi.proxy_pass is None
+
+
+def test_from_url_ipv6():
+    pi = httplib2.proxy_info_from_url("http://[::1]:8888")
+    assert pi.proxy_host == "::1"
+    assert pi.proxy_port == 8888
     assert pi.proxy_user is None
-    assert pi.proxy_pass == "leila"
 
 
 def test_from_env(monkeypatch):
