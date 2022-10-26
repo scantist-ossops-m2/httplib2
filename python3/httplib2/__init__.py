@@ -13,6 +13,7 @@ __contributors__ = [
     "Louis Nyffenegger",
     "Mark Pilgrim",
     "Alex Yu",
+    "Lai Han",
 ]
 __license__ = "MIT"
 __version__ = "0.20.4"
@@ -380,7 +381,10 @@ def _decompressContent(response, new_content):
             if encoding == "gzip":
                 content = gzip.GzipFile(fileobj=io.BytesIO(new_content)).read()
             if encoding == "deflate":
-                content = zlib.decompress(content, -zlib.MAX_WBITS)
+                try:
+                    content = zlib.decompress(content, zlib.MAX_WBITS)
+                except (IOError, zlib.error):
+                    content = zlib.decompress(content, -zlib.MAX_WBITS)
             response["content-length"] = str(len(content))
             # Record the historical presence of the encoding in a way the won't interfere.
             response["-content-encoding"] = response["content-encoding"]
