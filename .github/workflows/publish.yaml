@@ -39,6 +39,8 @@ jobs:
         run: check-manifest
       - name: twine check
         run: twine check dist/*
+      - name: script/test install_check_version
+        run: stages=venv,check_version script/test
 
       - uses: actions/upload-artifact@v2
         with:

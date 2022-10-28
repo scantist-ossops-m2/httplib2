@@ -28,10 +28,7 @@ jobs:
       - name: pip install
         run: pip install black isort -r requirements-test.txt
       - name: isort
-        run: isort --check python2/ python3/ tests/ || echo FIXME
+        run: isort --check python3/ tests/ || echo FIXME
       - name: black
-        run: black --check --diff python2/ python3/ tests/ || echo FIXME
-      - name: flake8 python2/
-        run: flake8 python2/
-      - name: flake8 python3/ tests/
-        run: flake8 python3/ tests/
+        run: black --check --diff python3/ tests/ || echo FIXME
+      - run: stages=venv,style script/test

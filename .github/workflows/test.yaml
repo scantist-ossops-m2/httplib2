@@ -22,6 +22,8 @@ jobs:
           - { py: 3.7, ignore-error: false }
           - { py: 3.8, ignore-error: false }
           - { py: 3.9, ignore-error: false }
+          - { py: "3.10", ignore-error: false }
+          - { py: "3.11", ignore-error: false }
           - { py: 3.x, ignore-error: true }
           - { py: pypy2, ignore-error: false }
           - { py: pypy3, ignore-error: false }
@@ -46,7 +48,7 @@ jobs:
       - run: pip install tox-gh
         if: startsWith(matrix.py, '3.') && matrix.py >= '3.6'
       - run: pip install 'codecov>=2.0.15' -r requirements-test.txt
-      - run: script/test -sv
+      - run: stages=venv,test script/test -sv
       - run: codecov --flags=$(echo ${{ matrix.py }} |tr -d -- '-.')
 
   test_py37_openssl11:
