@@ -1,5 +1,7 @@
+import platform
 import socket
 import ssl
+import sys
 
 import pytest
 from six.moves import urllib
@@ -73,17 +75,25 @@ def test_not_trusted_ca():
             pass
 
 
-ssl_context_accept_version = hasattr(tests.ssl_context(), "maximum_version") and hasattr(
-    tests.ssl_context(), "minimum_version"
+ssl_context_accept_version = (
+    hasattr(tests.ssl_context(), "maximum_version")
+    and hasattr(tests.ssl_context(), "minimum_version")
+    and not (platform.python_implementation().lower() == "pypy" and sys.version_info < (3,))
+)
+tls_minmax_versions = (
+    (None, "TLSv1_2", ssl.TLSVersion.TLSv1_2)
+    # TODO remove pypy2 workaround `and hasattr` clause
+    if ssl_context_accept_version and hasattr(ssl, "TLSVersion") else (None,)
 )
 
 
 @pytest.mark.skipif(not ssl_context_accept_version, reason="ssl doesn't support TLS min/max")
 @pytest.mark.parametrize("attr", ("maximum_version", "minimum_version"))
-@pytest.mark.parametrize("version", (None, "TLSv1_2", ssl.TLSVersion.TLSv1_2) if ssl_context_accept_version else (None,))
+@pytest.mark.parametrize("version", tls_minmax_versions)
 def test_set_tls_version(attr, version):
+    ctx = tests.ssl_context()
     # We expect failure on Python < 3.7 or OpenSSL < 1.1
-    expect_success = hasattr(ssl.SSLContext(), attr)
+    expect_success = hasattr(ctx, attr)
     kwargs = {"tls_" + attr: version}
     http = httplib2.Http(**kwargs)
     try:
@@ -94,10 +104,7 @@ def test_set_tls_version(attr, version):
         assert expect_success
 
 
-@pytest.mark.skipif(
-    not hasattr(tests.ssl_context(), "maximum_version"),
-    reason="ssl doesn't support TLS min/max",
-)
+@pytest.mark.skipif(not ssl_context_accept_version, reason="ssl doesn't support TLS min/max")
 def test_max_tls_version():
     http = httplib2.Http(ca_certs=tests.CA_CERTS, tls_maximum_version="TLSv1_2")
     with tests.server_const_http(tls=True) as uri:
