@@ -1,3 +1,10 @@
+0.21.0
+
+  http: `Content-Encoding: deflate` must accept zlib encapsulation
+  https://github.com/httplib2/httplib2/pull/230
+
+  Begin support and CI against CPython 3.10 and 3.11.
+
 0.20.4
 
   proxy: support proxy urls with ipv6 address

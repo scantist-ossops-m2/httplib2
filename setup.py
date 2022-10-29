@@ -4,7 +4,7 @@ import setuptools.command.test
 import sys
 
 pkgdir = {"": "python%s" % sys.version_info[0]}
-VERSION = "0.20.4"
+VERSION = "0.21.0"
 
 
 # `python setup.py test` uses existing Python environment, no virtualenv, no pip.
@@ -106,6 +106,8 @@ A comprehensive HTTP client library, ``httplib2`` supports many features left ou
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: Software Development :: Libraries",
     ],

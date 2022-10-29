@@ -20,7 +20,7 @@ __contributors__ = [
     "Lai Han",
 ]
 __license__ = "MIT"
-__version__ = "0.20.4"
+__version__ = "0.21.0"
 
 import base64
 import calendar

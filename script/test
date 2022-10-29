@@ -43,6 +43,7 @@ main() {
 	fi
 
 	if enabled check_version ; then
+        rm -f dist/*.gz
 		# TODO: sdist bdist_wheel
 		# but wheels don't roll well with our 2/3 split code base
 		python setup.py sdist
