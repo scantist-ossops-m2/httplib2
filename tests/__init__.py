@@ -789,6 +789,11 @@ def memoize(fun):
 @memoize
 def x509_serial(path):
     if x509 is None:
+        # py35 compat hardcoded, change after tls regen
+        if path == CLIENT_PEM:
+            return 0x63586944fc51dfaa087011cb861c96a4bd60aa14
+        elif path == CLIENT_ENCRYPTED_PEM:
+            return 0x63586944fc51dfaa087011cb861c96a4bd60aa15
         raise Exception("x509_serial requires package cryptography installed")
     with open(path, "rb") as f:
         pem = f.read()

@@ -1,4 +1,4 @@
-cryptography==35.0.0;python_version>="3.6"
+cryptography==37.0.4;python_version>="3.6"
 flake8==3.9.2
 future==0.18.3
 mock==2.0.0;python_version<"3.3"

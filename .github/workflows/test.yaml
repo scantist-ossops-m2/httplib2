@@ -8,7 +8,7 @@ jobs:
   test:
     name: "test ${{ matrix.py }}"
     continue-on-error: ${{ matrix.ignore-error }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     # https://github.community/t/duplicate-checks-on-push-and-pull-request-simultaneous-event/18012/5
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != 'httplib2/httplib2'
     timeout-minutes: 10
@@ -16,37 +16,34 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { py: 2.7, ignore-error: false }
-          - { py: 3.5, ignore-error: false }
-          - { py: 3.6, ignore-error: false }
-          - { py: 3.7, ignore-error: false }
-          - { py: 3.8, ignore-error: false }
-          - { py: 3.9, ignore-error: false }
-          - { py: "3.10", ignore-error: false }
-          - { py: "3.11", ignore-error: false }
-          - { py: 3.x, ignore-error: true }
-          - { py: pypy2, ignore-error: false }
-          - { py: pypy3, ignore-error: false }
+          - { py: 2.7, ignore-error: false, os: ubuntu-latest }
+          - { py: 3.5, ignore-error: false, os: ubuntu-20.04 }
+          - { py: 3.6, ignore-error: false, os: ubuntu-20.04 }
+          - { py: 3.7, ignore-error: false, os: ubuntu-latest }
+          - { py: 3.8, ignore-error: false, os: ubuntu-latest }
+          - { py: 3.9, ignore-error: false, os: ubuntu-latest }
+          - { py: "3.10", ignore-error: false, os: ubuntu-latest }
+          - { py: "3.11", ignore-error: false, os: ubuntu-latest }
+          - { py: 3.x, ignore-error: true, os: ubuntu-latest }
+          - { py: pypy2.7, ignore-error: false, os: ubuntu-latest }
+          - { py: pypy3.9, ignore-error: false, os: ubuntu-latest }
 
     steps:
-      - uses: actions/checkout@v2
-
-      - name: cache pip
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.py }}-${{ hashFiles('.github/workflows/test.yaml', 'pyproject.toml', 'requirements.txt', 'requirements-test.txt', 'setup.py') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-${{ matrix.py }}-
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+      - uses: actions/checkout@v3
 
       - name: setup python ${{ matrix.py }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.py }}
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            requirements*.txt
+            setup.py
       - run: pip install tox-gh
         if: startsWith(matrix.py, '3.') && matrix.py >= '3.6'
+      - run: pip install -U pip
+        if: startsWith(matrix.py, 'pypy3')
       - run: pip install 'codecov>=2.0.15' -r requirements-test.txt
       - run: stages=venv,test script/test -sv
       - run: codecov --flags=$(echo ${{ matrix.py }} |tr -d -- '-.')
@@ -59,10 +56,10 @@ jobs:
     if: false && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != 'httplib2/httplib2')
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: cache pip
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cache
           key: ${{ runner.os }}-py37_openssl11-${{ hashFiles('.github/workflows/test.yaml', 'pyproject.toml', 'requirements.txt', 'requirements-test.txt', 'setup.py') }}
