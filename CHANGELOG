@@ -1,3 +1,11 @@
+0.22.0
+
+  https: disable_ssl_certificate_validation caused ValueError: Cannot set verify_mode to CERT_NONE when check_hostname is enabled
+  https://github.com/httplib2/httplib2/pull/231
+
+  build(deps): bump cryptography from 37.0.4 to 38.0.3
+  Reason from cryptography changelog: Updated Windows, macOS, and Linux wheels to be compiled with OpenSSL 3.0.7, which resolves CVE-2022-3602 and CVE-2022-3786.
+
 0.21.0
 
   http: `Content-Encoding: deflate` must accept zlib encapsulation
